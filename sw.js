@@ -1,0 +1,13 @@
+const SHELL="tcc-shell-v1";
+const SHELL_FILES=["./", "index.html", "books.json", "manifest.webmanifest", "fonts/fonts.css", "fonts/poppins-500.woff2", "fonts/poppins-700.woff2", "icons/icon-180.png", "icons/icon-192.png", "icons/icon-512.png","icons/blank.png", "covers/dino1.jpg", "preview/dino1.png", "preview/dino1-t.jpg", "covers/dino2.jpg", "preview/dino2.png", "preview/dino2-t.jpg", "covers/princess1.jpg", "preview/princess1.png", "preview/princess1-t.jpg", "covers/princess2.jpg", "preview/princess2.png", "preview/princess2-t.jpg", "covers/cozyfam1.jpg", "preview/cozyfam1.png", "preview/cozyfam1-t.jpg", "covers/cozyfam2.jpg", "preview/cozyfam2.png", "preview/cozyfam2-t.jpg", "covers/brave1.jpg", "preview/brave1.png", "preview/brave1-t.jpg", "covers/brave2.jpg", "preview/brave2.png", "preview/brave2-t.jpg", "covers/afd.jpg", "preview/afd.png", "preview/afd-t.jpg", "covers/cats.jpg", "preview/cats.png", "preview/cats-t.jpg", "covers/heroes.jpg", "preview/heroes.png", "preview/heroes-t.jpg", "covers/cozydays.jpg", "preview/cozydays.png", "preview/cozydays-t.jpg", "covers/moments.jpg", "preview/moments.png", "preview/moments-t.jpg", "covers/afriends.jpg", "preview/afriends.png", "preview/afriends-t.jpg"];
+self.addEventListener("install",e=>{e.waitUntil(caches.open(SHELL).then(c=>c.addAll(SHELL_FILES)).then(()=>self.skipWaiting()))});
+self.addEventListener("activate",e=>{e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k.startsWith("tcc-shell-")&&k!==SHELL).map(k=>caches.delete(k)))).then(()=>self.clients.claim()))});
+self.addEventListener("fetch",e=>{
+  const req=e.request;if(req.method!=="GET")return;
+  const url=new URL(req.url);if(url.origin!==location.origin)return;
+  // app shell: network first so updates arrive, cache when offline
+  if(req.mode==="navigate"||url.pathname.endsWith("/index.html")||url.pathname.endsWith("/books.json")){
+    e.respondWith(fetch(req).then(r=>{const c=r.clone();caches.open(SHELL).then(x=>x.put(req.mode==="navigate"?"./":req,c));return r}).catch(()=>caches.match(req.mode==="navigate"?"./":req,{ignoreSearch:true}).then(r=>r||caches.match("index.html"))));return}
+  // everything else: cache first; keep book pages the user opens
+  e.respondWith(caches.match(req,{ignoreSearch:true}).then(hit=>hit||fetch(req).then(r=>{if(r.ok&&url.pathname.indexOf("/books/")>=0){const c=r.clone();caches.open("tcc-books").then(x=>x.put(req,c))}return r})));
+});
