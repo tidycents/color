@@ -138,6 +138,7 @@ var COLORS=["#e63946","#ff7b9c","#f9a8d4","#ff8c1a","#f4a259","#ffd23f","#fff3a3
 var LANG=(navigator.language||"en").toLowerCase().indexOf("es")===0?"es":"en";
 try{var q=new URLSearchParams(location.search).get("lang");if(q==="es"||q==="en")LANG=q;var sl=localStorage.getItem("tcc-lang");if(sl&&!q)LANG=sl}catch(e){}
 function t(k){return T[LANG][k]}
+function bt(b){return LANG==="en"&&b.title_en?b.title_en:b.title}
 function esc(s){return String(s).replace(/[&<>"']/g,function(c){return{"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]})}
 function $(id){return document.getElementById(id)}
 function ls(k,v){try{if(v===undefined){var r=localStorage.getItem(k);return r?JSON.parse(r):null}localStorage.setItem(k,JSON.stringify(v))}catch(e){return null}}
@@ -195,7 +196,7 @@ function isStandalone(){return (window.matchMedia&&matchMedia("(display-mode: st
 function isIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==="MacIntel"&&navigator.maxTouchPoints>1)}
 function bookCard(b,owned){
   var chip=b.free?'<span class="chip free">'+t("free")+'</span>':owned?(OFF[b.id]?'<span class="chip off">✓ '+t("offline")+'</span>':''):'<span class="chip lock">'+t("locked")+'</span>';
-  return '<button class="bk" type="button" data-book="'+b.id+'"><img src="covers/'+b.id+'.jpg" alt="" loading="lazy"><div class="bd"><b>'+esc(b.title)+'</b><small>'+b.pages.length+' '+t("pages")+'</small>'+chip+'</div></button>';
+  return '<button class="bk" type="button" data-book="'+b.id+'"><img src="covers/'+b.id+'.jpg" alt="" loading="lazy"><div class="bd"><b>'+esc(bt(b))+'</b><small>'+b.pages.length+' '+t("pages")+'</small>'+chip+'</div></button>';
 }
 function renderLib(){
   view="lib";var owned=BOOKS.filter(function(b){return b.free||UNL[b.id]}),locked=BOOKS.filter(function(b){return !b.free&&!UNL[b.id]});
@@ -209,7 +210,7 @@ function renderLib(){
   '</main>';
   $("cf").onsubmit=function(e){e.preventDefault();var m=$("cm"),v=$("code").value;m.className="msg";m.textContent="…";
     unlock(v).then(function(list){if(!list){m.className="msg err";m.textContent=t("bad");return}
-      var names=[];list.forEach(function(x){UNL[x.id]={k:x.k};var b=bookById(x.id);if(b)names.push(b.title)});ls("tcc-unlocked",UNL);
+      var names=[];list.forEach(function(x){UNL[x.id]={k:x.k};var b=bookById(x.id);if(b)names.push(bt(b))});ls("tcc-unlocked",UNL);
       m.className="msg ok";m.textContent=t("ok")+names.join(", ");setTimeout(function(){if(list.length===1)openBook(list[0].id);else render()},900)})};
   var ib=$("instBtn");if(ib)ib.onclick=function(){deferredPrompt.prompt();deferredPrompt.userChoice.then(function(){deferredPrompt=null;render()})};
 }
@@ -218,8 +219,8 @@ function renderBook(){
   view="book";var b=curBook,d=dirOf(b),owned=!!d;
   var thumbs=b.pages.map(function(p,i){var n=String(i+1).padStart(2,"0");var src=owned?"icons/blank.png":(i===0?"preview/"+b.id+"-t.jpg":"covers/"+b.id+".jpg");
     var ok=owned||i===0;return '<button class="pgb'+(ok?'':' lockd')+'" type="button" data-pg="'+i+'"><img data-k="'+b.id+'/'+i+'" src="'+src+'" alt="" loading="lazy"><span>'+(i+1)+'</span></button>'}).join("");
-  app.innerHTML=header('<button class="ib" type="button" data-go="lib" aria-label="'+t("back")+'">'+ICON.back+'</button><span class="title">'+esc(b.title)+'</span>'+langBtns())+
-  '<main class="wrap"><div class="bookhead"><img src="covers/'+b.id+'.jpg" alt=""><div class="info"><h1 style="font-size:22px">'+esc(b.title)+'</h1><small style="color:var(--muted)">'+b.pages.length+' '+t("pages")+'</small>'+
+  app.innerHTML=header('<button class="ib" type="button" data-go="lib" aria-label="'+t("back")+'">'+ICON.back+'</button><span class="title">'+esc(bt(b))+'</span>'+langBtns())+
+  '<main class="wrap"><div class="bookhead"><img src="covers/'+b.id+'.jpg" alt=""><div class="info"><h1 style="font-size:22px">'+esc(bt(b))+'</h1><small style="color:var(--muted)">'+b.pages.length+' '+t("pages")+'</small>'+
   (owned&&!b.free?(OFF[b.id]?'<span class="chip off">✓ '+t("offline")+'</span>':'<div><button class="btn" type="button" id="dlBtn">'+t("dl")+'</button></div><div class="bar" hidden><i id="dlBar"></i></div>'):'')+
   (b.free&&!OFF[b.id]?'<div><button class="btn" type="button" id="dlBtn">'+t("dl")+'</button></div><div class="bar" hidden><i id="dlBar"></i></div>':'')+
   (!owned?'<p class="msg">'+t("tryp")+'</p><div><a class="btn orange" href="'+(b.buy||STORE_URL+LANG+'#store')+'" target="_blank" rel="noopener">'+t("get")+'</a></div>':'')+
