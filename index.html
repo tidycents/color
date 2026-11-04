@@ -322,7 +322,7 @@ function startStudio(){
   var paint=$("paint"),lines=$("lines"),board=$("board"),stage=$("stage");
   var pctx=paint.getContext("2d",{willReadFrequently:true}),lctx=lines.getContext("2d");
   var W=p.w,H=p.h,mask,zoom=1,undoStack=[],saveTm=null,clearArmed=false,key=artKey(b,curPage);
-  if(pk){if(S.pkFor!==b.id){S.pkFor=b.id;S.tool=isStory(b)?"fill":"brush"}}else S.pkFor=null;
+  if(pk||b.gray){if(S.pkFor!==b.id){S.pkFor=b.id;S.tool=(pk&&isStory(b))?"fill":"brush"}}else S.pkFor=null;
   S.tool=S.tool||"fill";S.color=S.color||"#ff8c1a";
   paint.width=lines.width=W;paint.height=lines.height=H;
   function fit(){var r=stage.getBoundingClientRect();var s=Math.max(.05,Math.min((r.width-16)/W,(r.height-16)/H))*zoom;board.style.width=Math.round(W*s)+"px";board.style.height=Math.round(H*s)+"px"}
@@ -330,7 +330,7 @@ function startStudio(){
   var img=new Image();img.onload=function(){
     var tmp=document.createElement("canvas");tmp.width=W;tmp.height=H;var tc=tmp.getContext("2d");tc.fillStyle="#fff";tc.fillRect(0,0,W,H);tc.drawImage(img,0,0,W,H);
     var dd=tc.getImageData(0,0,W,H).data;mask=new Uint8Array(W*H);var out=lctx.createImageData(W,H),o=out.data;
-    if(pk){for(var k=0,j=0;k<W*H;k++,j+=4){var r0=dd[j],g0=dd[j+1],b0=dd[j+2];mask[k]=(.299*r0+.587*g0+.114*b0)<165?1:0;var a=Math.min(1,(255-Math.min(r0,g0,b0))/255*1.6);
+    if(pk||b.gray){for(var k=0,j=0;k<W*H;k++,j+=4){var r0=dd[j],g0=dd[j+1],b0=dd[j+2];mask[k]=(.299*r0+.587*g0+.114*b0)<165?1:0;var a=Math.min(1,(255-Math.min(r0,g0,b0))/255*1.6);
       if(a<.05){o[j+3]=0}else{o[j]=Math.max(0,Math.min(255,(r0-(1-a)*255)/a));o[j+1]=Math.max(0,Math.min(255,(g0-(1-a)*255)/a));o[j+2]=Math.max(0,Math.min(255,(b0-(1-a)*255)/a));o[j+3]=Math.round(a*255)}}}
     else for(var k=0,j=0;k<W*H;k++,j+=4){var dk=dd[j]<128;mask[k]=dk?1:0;o[j]=30;o[j+1]=26;o[j+2]=30;o[j+3]=dk?255:0}
     lctx.putImageData(out,0,0);pctx.fillStyle="#fff";pctx.fillRect(0,0,W,H);
@@ -341,7 +341,7 @@ function startStudio(){
   var cw=document.createElement("label");cw.className="custom";var ci=document.createElement("input");ci.type="color";ci.id="customColor";ci.value=S.color;ci.setAttribute("aria-label","Custom color");ci.oninput=function(){setColor(ci.value)};cw.appendChild(ci);pal.appendChild(cw);
   function setColor(c){S.color=c;pal.querySelectorAll(".sw").forEach(function(x){x.setAttribute("aria-pressed",String(x.getAttribute("aria-label")===c))});if(S.tool==="erase"||S.tool==="move")setTool("fill")}
   function setTool(x){S.tool=x;["fill","brush","erase","move"].forEach(function(n){$("t-"+n).setAttribute("aria-pressed",String(n===x))});board.classList.toggle("move",x==="move");$("sizewrap").hidden=!(x==="brush"||x==="erase");
-    $("hint").textContent=t({fill:"hFill",brush:(pk&&!isStory(b))?"hTrace":"hBrush",erase:"hErase",move:"hMove"}[x])+" "+t("auto")}
+    $("hint").textContent=t({fill:"hFill",brush:((pk&&!isStory(b))||b.gray)?"hTrace":"hBrush",erase:"hErase",move:"hMove"}[x])+" "+t("auto")}
   ["fill","brush","erase","move"].forEach(function(n){$("t-"+n).onclick=function(){setTool(n)}});
   if(pk&&!isStory(b)&&!S.pkSized){S.pkSized=1;$("size").value=9}setColor(S.color);setTool(S.tool);
   function snap(){try{undoStack.push(pctx.getImageData(0,0,W,H));if(undoStack.length>8)undoStack.shift();$("undo").disabled=false}catch(e){}}
